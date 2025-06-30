@@ -204,28 +204,63 @@ impl<'a> Cpu<'a> {
                 rs,
                 imm,
             } => {
+                let rd = rd as usize;
+                let rs = rs as usize;
                 match opcode {
                     0b0010011 => {
                         match funct3 {
                             //addi
                             0x0 => {
-                                self.regs[rd as usize].value =
-                                    self.regs[rs as usize].value + imm as u32;
+                                self.regs[rd].value = self.regs[rs].value + imm as u32;
                             }
                             //xori
                             0x4 => {
-                                self.regs[rd as usize].value =
-                                    self.regs[rs as usize].value ^ imm as u32;
+                                self.regs[rd].value = self.regs[rs].value ^ imm as u32;
                             }
                             //ori
                             0x6 => {
-                                self.regs[rd as usize].value =
-                                    self.regs[rs as usize].value | imm as u32;
+                                self.regs[rd].value = self.regs[rs].value | imm as u32;
                             }
                             //andi
                             0x7 => {
-                                self.regs[rd as usize].value =
-                                    self.regs[rs as usize].value & imm as u32;
+                                self.regs[rd].value = self.regs[rs].value & imm as u32;
+                            }
+                            0x1 => {
+                                let shift_bits_num = imm & 0b11111;
+                                let funct7 = imm >> 5;
+                                match funct7 {
+                                    //slli
+                                    0x00 => {
+                                        self.regs[rd].value = self.regs[rs].value << shift_bits_num;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            0x5 => {
+                                let shift_bits_num = imm & 0b11111;
+                                let funct7 = imm >> 5;
+                                match funct7 {
+                                    //srli
+                                    0x00 => {
+                                        self.regs[rd].value = self.regs[rs].value >> shift_bits_num;
+                                    }
+                                    //srai - msb-extension
+                                    0x20 => {
+                                        self.regs[rd].value =
+                                            (self.regs[rs].value as i32 >> shift_bits_num) as u32;
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            //slti
+                            0x2 => {
+                                let rs1_value = self.regs[rs].value;
+                                self.regs[rd].value = if rs1_value < imm as u32 { 1 } else { 0 }
+                            }
+                            //sltiu - zero-extension
+                            0x3 => {
+                                let rs1_value = self.regs[rs].value;
+                                self.regs[rd].value = if rs1_value < imm as u32 { 1 } else { 0 }
                             }
                             _ => {}
                         }
